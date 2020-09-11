@@ -1,151 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial_scale=1.0"/>
-        <meta name="author" content="Lucas Barbosa"/>
-        <meta name="description" content="My User Manual for 11SDD Task 3, Custom Challenge"/>
-        <meta name="title" content="User Manual"/>
-        <title>User Manual</title>
-        <link rel="icon shortcut" href="img/NN.png">
-    </head>
-    <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Lucas Barbosa" />
+    <meta
+      name="description"
+      content="My User Manual for 11SDD Task 3, Custom Challenge"
+    />
+    <meta name="title" content="User Manual" />
+    <title>User Manual</title>
+    <link rel="icon shortcut" href="docs/img/NN.png" />
+    <link rel="stylesheet" href="styles/master.css" />
+  </head>
+  <style>
     @import url("https://fonts.googleapis.com/css?family=Raleway:100,200,400,700");
+    @import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@300&display=swap");
     * {
-        margin: 0; padding: 0;
-        font-family: 'Raleway', sans-serif;
-        font-weight: 200;
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        -ms-box-sizing: border-box;
-        -o-box-sizing: border-box;
-        box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Raleway", sans-serif;
+      font-weight: 200;
+      -webkit-box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      -ms-box-sizing: border-box;
+      -o-box-sizing: border-box;
+      box-sizing: border-box;
     }
 
-    a:active, a:active, a {
-        color: inherit !important;
-    }
-
-    @keyframes pulse {
-        0%   {background-color: #e6e6e6;}
-        25%  {background-color: #d9d9d9; color: #fff;}
-        50%  {background-color: #b3b3b3; color: #fff;}
-        100% {background-color: #a6a6a6; color: #fff;}
-    }
-
-    @-webkit-keyframes pulse {
-        0%   {background-color: #e6e6e6;}
-        25%  {background-color: #d9d9d9; color: #fff;}
-        50%  {background-color: #b3b3b3; color: #fff;}
-        100% {background-color: #a6a6a6; color: #fff;}
-    }
-
-    @keyframes pulse-2 {
-        0%   {background-color: #aec2ea;}
-        25%  {background-color: #85a3e0; color: #fff;}
-        50%  {background-color: #5c85d6; color: #fff;}
-        100% {background-color: #3366cc; color: #fff;}
-    }
-
-    @-webkit-keyframes pulse-2 {
-        0%   {background-color: #aec2ea;}
-        25%  {background-color: #85a3e0; color: #fff;}
-        50%  {background-color: #5c85d6; color: #fff;}
-        100% {background-color: #3366cc; color: #fff;}
+    a:active,
+    a:active,
+    a {
+      color: inherit !important;
     }
 
     body {
-        width: 100%; height: 100%;
-        display: flex !important;
-        flex-direction: row;
+      width: 100%;
+      height: 100%;
+      display: flex !important;
+      flex-direction: row;
     }
 
-    [class*="outter-wrapper"] {
-        max-width: 600px; height: auto;
-        display: block;
-        background-color: #E6E6E6;
-        padding: 8px;
-        margin: 100px auto;
-        animation-name: pulse;
-        -webkit-animation-name: pulse;
-        animation-duration: 10s;
-        -webkit-animation-duration: 10s;
-        animation-iteration-count: infinite;
-        -webkit-animation-iteration-count: infinite;
-        -webkit-transition: all ease 0.2s;
-        -moz-transition: all ease 0.2s;
-        -ms-transition: all ease 0.2s;
-        -o-transition: all ease 0.2s;
-        transition: all ease 0.2s;
+    [class*="wrapper"] {
+      max-width: 600px;
+      height: auto;
+      display: block;
+      background-color: #a5d2d5c6;
+      margin: 100px auto;
+      -webkit-transition: all ease 0.2s;
+      -moz-transition: all ease 0.2s;
+      -ms-transition: all ease 0.2s;
+      -o-transition: all ease 0.2s;
+      transition: all ease 0.2s;
     }
 
     [class*="pg-title"] {
-        font-weight: 100;
-        font-size: 45px;
-        text-align: center;
-        margin-bottom: 30px;
+      font-weight: 100;
+      font-size: 45px;
+      text-align: center;
     }
 
     nav {
-        margin-top: 30px; padding: 8px;
-        width: 100%;
-        background-color: #d9d9d9;
-        animation-name: pulse-2;
-        -webkit-animation-name: pulse-2;
-        animation-duration: 10s;
-        -webkit-animation-duration: 10s;
-        animation-iteration-count: infinite;
-        -webkit-animation-iteration-count: infinite;
+      width: 100%;
+      background-color: #d9d9d9;
     }
 
     nav > ul {
-        display: flex;
-        justify-content: space-around;
-        list-style: none;
-        padding: 0;
+      display: flex;
+      justify-content: space-around;
+      list-style: none;
     }
 
     nav > ul > li {
-        margin: auto; padding: 0;
-        width: 100%; height: 40px;
-        line-height: 40px;
-        position: relative;
-        overflow: hidden;
-        text-align: center;
+      margin: auto;
+      height: 40px;
+      width: 100%;
+      line-height: 40px;
+      overflow: hidden;
+      text-align: center;
     }
 
     nav > ul > li > a {
-        width: 100%; height: auto;
-        margin: auto; padding: auto;
-        display: block;
-        text-decoration: none;
-        -webkit-transition: all ease 0.2s;
-        -moz-transition: all ease 0.2s;
-        -ms-transition: all ease 0.2s;
-        -o-transition: all ease 0.2s;
-        transition: all ease 0.2s;
+      width: 100%;
+      height: auto;
+      margin: auto;
+      padding: auto;
+      display: block;
+      text-decoration: none;
+      -webkit-transition: all ease 0.2s;
+      -moz-transition: all ease 0.2s;
+      -ms-transition: all ease 0.2s;
+      -o-transition: all ease 0.2s;
+      transition: all ease 0.2s;
     }
 
-    nav > ul > li > a:hover {
-        background-color: grey;
-        color: #fff !important;
+    footer {
+      width: 100%;
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      font-family: "Source Code Pro", monospace;
     }
-    </style>
-    <body>
-        <div class="outter-wrapper">
-            <div class="content-wrapper">
-                <h1 class="pg-title">Applications of Machine Learning with Artificial Neural Networks and Supervised Regression</h1>
-                <center><i>Task 3 Custom Challenge User Manual</i></center><br>
-                <br>
-                <center><span>Lucas Barbosa | Mr Tosic | Software Design & Development</span></center>
-                <nav>
-                    <ul>
-                        <li><a href="docs/intro.html" target="_blank">Introduction</a></li>
-                        <li><a href="docs/architecture.html" target="_blank">Architecture</a></li>
-                        <li><a href="docs/training.html" target="_blank">Training</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-    </body>
+  </style>
+  <body>
+    <div class="wrapper rounded-lg shadow-2xl p-6">
+      <h1 class="pg-title mb-4">
+        <strong>Applications of Machine Learning</strong> with Artificial Neural
+        Networks and Supervised Regression
+      </h1>
+      <nav class="rounded-lg shadow-lg">
+        <ul>
+          <li>
+            <a
+              href="docs/intro.html"
+              target="_blank"
+              class="hover:bg-gray-200 rounded-l-lg"
+              >Introduction</a
+            >
+          </li>
+          <li>
+            <a
+              href="docs/architecture.html"
+              target="_blank"
+              class="hover:bg-gray-200"
+              >Architecture</a
+            >
+          </li>
+          <li>
+            <a
+              href="docs/training.html"
+              target="_blank"
+              class="hover:bg-gray-200 rounded-r-lg"
+              >Training</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </div>
+    <footer class="bg-gray-200 py-2">
+      <p class="text-gray-800 text-center text-sm mb-2">
+        Task 3 &raquo; Custom Challenge &raquo; User Manual
+      </p>
+      <p class="text-gray-800 text-center text-sm">
+        Lucas Barbosa &raquo; Mr Tosic &raquo; Software Design & Development
+        2017
+      </p>
+    </footer>
+  </body>
 </html>
