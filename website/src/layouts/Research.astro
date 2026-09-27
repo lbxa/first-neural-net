@@ -1,0 +1,55 @@
+---
+import '../styles/global.css';
+import { chapters } from '../data/chapters';
+import { siteTitle } from '../data/site';
+import Seo from '../components/Seo.astro';
+interface Props {
+  frontmatter?: { title: string; description: string; seoTitle?: string };
+  title?: string;
+  description?: string;
+  headings?: { depth: number; slug: string; text: string }[];
+}
+const { frontmatter, headings = [] } = Astro.props;
+const title = frontmatter?.title ?? Astro.props.title ?? siteTitle;
+const description = frontmatter?.description ?? Astro.props.description ?? '';
+const current = chapters.findIndex((chapter) => chapter.href === Astro.url.pathname);
+const previous = chapters[current - 1];
+const next = current >= 0 ? chapters[current + 1] : undefined;
+const contents = headings.filter((heading) => heading.depth === 2);
+---
+<!doctype html>
+<html lang="en" id="top">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <Seo title={title} seoTitle={frontmatter?.seoTitle} description={description} chapterIndex={current} />
+    <link rel="icon" type="image/svg+xml" href="/neural-network.svg" />
+  </head>
+  <body class="max-w-4xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
+    <a href="#main" class="skip-link">Skip to content</a>
+    <header class="my-6">
+      <p><a href="/">Lucas Barbosa / {siteTitle}</a></p>
+      <p>A research notebook · Oakhill College · <time datetime="2017-07-28">28 July 2017</time></p>
+      <nav aria-label="Chapters"><p>
+        {chapters.map((chapter) => <span class="inline-block mr-4 my-1"><a href={chapter.href} aria-current={chapter.href === Astro.url.pathname ? 'page' : undefined}>{chapter.title}</a>{chapter.href === Astro.url.pathname && ' (current)'}</span>)}
+      </p></nav>
+    </header>
+    <hr />
+    <main id="main" tabindex="-1" class="my-10"><article>
+      <h1>{title}</h1>
+      {contents.length > 0 && <nav aria-label="On this page" class="my-6"><details><summary>On this page</summary><ul class="pl-6 space-y-2">{contents.map((heading) => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ul></details></nav>}
+      <slot />
+    </article></main>
+    <hr />
+    <nav aria-label="Previous and next chapters" class="chapter-navigation my-8 space-y-4">
+      {previous && <p>Previous: <a href={previous.href}>{previous.title}</a></p>}
+      {next && <p>Next: <a href={next.href}>{next.title}</a></p>}
+      <p><a href="#top">Back to top</a></p>
+    </nav>
+    <footer class="my-8">
+      <p>Lucas Barbosa · A 2–3–1 multilayer perceptron for supervised regression.</p>
+      <p><a href="/source/#original-material">Original material</a> · <a href="/results/#limitations-and-lessons">Limitations & lessons</a> · <a href="https://github.com/lbxa/first-neural-net">Project repository</a></p>
+    </footer>
+  </body>
+</html>

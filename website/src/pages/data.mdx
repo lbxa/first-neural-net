@@ -1,0 +1,136 @@
+---
+layout: ../layouts/Research.astro
+title: Data & preparation
+seoTitle: Neural Network Data & Normalization
+description: Explore all eight examples used by the neural network, input and target normalization, and the consequences of scaling training and test data separately.
+---
+
+The full dataset contains eight rows, written directly into the Python program. Four are used to optimize the weights; four are passed to the training callback to track test cost. There is no separate validation set.
+
+## The complete dataset
+
+The column order follows the original introduction: **hours slept first, hours studied second**. Some prose elsewhere in the manual reverses the verbal order; the numerical arrays are preserved here as written.
+
+<div className="overflow-x-auto" tabIndex="0" role="region" aria-label="Complete original dataset">
+  <table>
+    <caption>Table 1. All eight examples from the final Python implementation.</caption>
+    <thead><tr><th scope="col">Split</th><th scope="col">Row</th><th scope="col">Sleep (hours)</th><th scope="col">Study (hours)</th><th scope="col">Score / 100</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Training</th><td>1</td><td>3</td><td>5</td><td>75</td></tr>
+      <tr><th scope="row">Training</th><td>2</td><td>5</td><td>1</td><td>82</td></tr>
+      <tr><th scope="row">Training</th><td>3</td><td>10</td><td>2</td><td>93</td></tr>
+      <tr><th scope="row">Training</th><td>4</td><td>6</td><td>1.5</td><td>70</td></tr>
+      <tr><th scope="row">Test</th><td>1</td><td>4</td><td>5.5</td><td>70</td></tr>
+      <tr><th scope="row">Test</th><td>2</td><td>4.5</td><td>1</td><td>89</td></tr>
+      <tr><th scope="row">Test</th><td>3</td><td>9</td><td>2.5</td><td>85</td></tr>
+      <tr><th scope="row">Test</th><td>4</td><td>6</td><td>2</td><td>75</td></tr>
+    </tbody>
+  </table>
+</div>
+
+The repository does not document sampling, student identities, collection methods, or measurement uncertainty. These are best read as illustrative observations for a programming assignment, rather than a documented empirical study of student performance.
+
+## Arrays and dimensions
+
+The code represents each split as a floating-point matrix with one example per row. Inputs have shape $(4,2)$ and targets have shape $(4,1)$.
+
+~~~python
+train_x = np.array(([3, 5], [5, 1], [10, 2], [6, 1.5]), dtype=float)
+train_y = np.array(([75], [82], [93], [70]), dtype=float)
+
+test_x = np.array(([4, 5.5], [4.5, 1], [9, 2.5], [6, 2]), dtype=float)
+test_y = np.array(([70], [89], [85], [75]), dtype=float)
+~~~
+
+Floating-point arrays matter because the helper scales values in place. The target's second dimension also matters: keeping a column vector avoids unintended broadcasting when subtracting predictions.
+
+## The original normalization
+
+Each input column is divided by its largest value. Each score is divided by 100. Let $H$ contain the raw hours and let $s_i$ be a raw score. The normalized inputs and targets are $X$ and $y$, the notation used in the network equations. For a split containing $m$ rows, the original helper computes:
+
+$$
+\begin{aligned}
+X_{ij} &= \frac{H_{ij}}{\max_{1\leq k\leq m} H_{kj}},\\[0.75em]
+y_i &= \frac{s_i}{100}.
+\end{aligned}
+$$
+
+~~~python
+def scale_data(self, hours, test_score):
+    MAX_SCORE = 100.
+    hours /= np.amax(hours, axis=0)
+    test_score /= MAX_SCORE
+    return hours, test_score
+~~~
+
+The training maxima are 10 hours of sleep and 5 hours of study. The resulting input and target arrays are:
+
+$$
+\def\arraystretch{1.25}
+X_{\mathrm{train}}=
+\begin{bmatrix}
+0.3 & 1.0\\
+0.5 & 0.2\\
+1.0 & 0.4\\
+0.6 & 0.3
+\end{bmatrix}
+$$
+
+$$
+\def\arraystretch{1.25}
+y_{\mathrm{train}}=
+\begin{bmatrix}
+0.75\\
+0.82\\
+0.93\\
+0.70
+\end{bmatrix}
+$$
+
+Scaling the inputs keeps their numerical values in a similar range. Scaling the targets also makes them compatible with the sigmoid output. A network can handle quantities with different physical units; normalization is a numerical and modeling choice, not a requirement that all original quantities share a unit.
+
+## The train–test scaling mismatch
+
+The program calls the helper independently on each split:
+
+~~~python
+train_x, train_y = Aux.scale_data(train_x, train_y)
+test_x, test_y = Aux.scale_data(test_x, test_y)
+~~~
+
+For the test inputs, the maxima are 9 and 5.5 instead of 10 and 5. This changes the coordinate system seen by the network. For example, 6 hours of sleep becomes $6/10=0.6$ during training but $6/9\approx0.667$ during testing.
+
+$$
+\def\arraystretch{1.25}
+X_{\mathrm{test}}\approx
+\begin{bmatrix}
+0.4444 & 1.0000\\
+0.5000 & 0.1818\\
+1.0000 & 0.4545\\
+0.6667 & 0.3636
+\end{bmatrix}
+$$
+
+This is an inconsistency in preprocessing, and the test inputs influence their own scaling. It means the archived test-cost curve does not evaluate the same transformation of raw hours that the network was trained on.
+
+**Retrospective correction:** determine the input scale using the training split, then reuse it on the test split and future examples. The following is an illustrative correction, not the preprocessing used for the historical results.
+
+~~~python
+input_scale = train_x.max(axis=0)
+x_train_scaled = train_x / input_scale
+x_test_scaled = test_x / input_scale
+y_train_scaled = train_y / 100.0
+y_test_scaled = test_y / 100.0
+~~~
+
+Here, the 5.5-hour test study value becomes 1.1. That is acceptable: a future observation can exceed the training maximum. It should not silently redefine the meaning of an input.
+
+## What the split does and does not provide
+
+The BFGS objective uses only training inputs and training targets. Test cost is evaluated in a callback after optimizer iterations; it does not contribute to the supplied training gradients.
+
+Keeping separate rows is a useful first step toward evaluating generalization. With only four test examples, however, the evaluation would remain fragile even after correcting normalization. The saved notebook does not include a test prediction array or a scalar test error.
+
+The original helper also assumes positive, nonzero column maxima and divides arrays in place. Calling it on a single new example would normalize each nonzero feature to one, losing the actual hours. Reusing a stored training scale is necessary for meaningful inference.
+
+Source: [architecture notebook](/archive/architecture.ipynb), [training notebook](/archive/training.ipynb), and the [complete source](/source/#complete-implementation).

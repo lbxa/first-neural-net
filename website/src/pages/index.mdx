@@ -1,0 +1,51 @@
+---
+layout: ../layouts/Research.astro
+title: Feedforward Neural Network for Regression
+description: A 2–3–1 feedforward neural network for regression, implemented in NumPy with backpropagation and BFGS. Original code, derivations, and archived results.
+---
+import NetworkDiagram from '../components/NetworkDiagram.astro';
+import { chapters } from '../data/chapters';
+
+*A 2–3–1 multilayer perceptron, implemented from scratch with backpropagation and BFGS.*
+
+In 2017, I built a fully connected feedforward neural network for a high-school software development project at Oakhill College. The question was simple: could a network learn to estimate a student’s test score from hours slept and hours studied?
+
+The interesting part was everything behind that prediction. I implemented the forward pass, differentiated the loss, checked the gradients numerically, and connected those gradients to an optimizer. NumPy handled the matrix operations; SciPy handled optimization. The network itself was written by hand.
+
+This is an in-depth account of that work, bringing together the original manual, Python source, diagrams, and saved notebook results. The explanations follow the implementation, with retrospective notes where the original text needs a correction.
+
+## The experiment at a glance
+
+**Task:** Supervised regression: two inputs, one score out of 100.
+
+**Architecture:** Two input units, three hidden units, one output unit; nine weights and no biases.
+
+**Training:** Handwritten backpropagation, L2 regularization, and SciPy’s BFGS optimizer.
+
+**Data:** Four training examples and four test examples, specified directly in the code.
+
+**Saved result:** 80 optimizer iterations; final regularized objective 0.002864.
+
+<NetworkDiagram caption="Figure 1. The 2–3–1 network, redrawn in TikZ from the original architecture. Two normalized inputs feed three hidden units and one predicted score." />
+
+## What the project established
+
+The saved notebook shows a working learning pipeline: numerical and analytic gradients agree at the displayed precision, BFGS reports successful termination, and the network produces predictions on the training examples. Those predictions have a mean absolute error of about **5.54 points out of 100**, calculated here from the archived outputs.
+
+That is a useful outcome for an implementation exercise. It is not evidence that sleep and study hours are sufficient to predict real students’ scores. Eight illustrative examples, a preprocessing inconsistency, and no saved test predictions limit what can be concluded about generalization. The [results chapter](/results/) treats the successful implementation and those limits together.
+
+## Read the research
+
+The chapters follow the path from a learning problem to a working program. Each can also be read on its own.
+
+<ol className="pl-6 space-y-4">
+  {chapters.slice(1).map((chapter) => <li><a href={chapter.href}>{chapter.title}</a><p>{chapter.description}</p></li>)}
+</ol>
+
+For a direct look at the evidence, start with the [saved results](/results/#the-recorded-training-run). To follow the implementation end to end, start with [the problem and foundations](/foundations/). The [source chapter](/source/) includes the entire Python file and downloadable notebooks.
+
+## Reading this archive
+
+**Original evidence** means material preserved in the repository: code, notebook output, or a figure. **Derived measurements** are calculations made for this site using saved numerical output. **Retrospective notes** explain limitations or correct the original exposition. No new training run is presented as a historical result.
+
+The source file dates the project to 28 July 2017. The notebooks do not preserve a random seed, trained weights, or a complete environment lockfile, so an exact replay of the saved run is not available. The original work is preserved separately from this account in the [project repository](https://github.com/lbxa/first-neural-net).

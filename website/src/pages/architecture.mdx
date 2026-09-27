@@ -1,0 +1,155 @@
+---
+layout: ../layouts/Research.astro
+title: Network architecture
+seoTitle: 2–3–1 Feedforward Neural Network Architecture
+description: Walk through a 2–3–1 multilayer perceptron with nine weights, sigmoid activations, matrix dimensions, and a vectorized NumPy forward pass.
+---
+import NetworkDiagram from '../components/NetworkDiagram.astro';
+
+The model is a fully connected feedforward neural network, also called a multilayer perceptron (MLP). Information travels from the inputs through a single hidden layer to the output; there are no recurrent connections.
+
+## Two inputs, three hidden units, one output
+
+<NetworkDiagram caption="Figure 5. A TikZ reconstruction of the original architecture. Six input-to-hidden weights and three hidden-to-output weights make nine trainable parameters; there are no biases." />
+
+The layer sizes are fixed in the constructor. The weights are initialized using samples from a standard normal distribution.
+
+~~~python
+self.input_layer_size = 2
+self.hidden_layer_size = 3
+self.output_layer_size = 1
+
+self.W1 = np.random.randn(self.input_layer_size, self.hidden_layer_size)
+self.W2 = np.random.randn(self.hidden_layer_size, self.output_layer_size)
+~~~
+
+There are $2\times3=6$ weights in the first matrix and $3\times1=3$ in the second. **No bias vectors are initialized or used.** The network therefore has nine trainable scalars.
+
+The original code does not set a random seed. Fresh runs begin at different points in parameter space and need not converge to the same result.
+
+## Keep track of the shapes
+
+For a batch of $m$ examples, the tensors have the following dimensions. In the implemented training split, $m=4$.
+
+<div className="overflow-x-auto" tabIndex="0" role="region" aria-label="Network matrix dimensions">
+  <table>
+    <caption>Table 2. Dimensions for a batch of m examples.</caption>
+    <thead><tr><th scope="col">Quantity</th><th scope="col">Meaning</th><th scope="col">Shape</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">X</th><td>Normalized inputs</td><td>m × 2</td></tr>
+      <tr><th scope="row">W¹</th><td>Input-to-hidden weights</td><td>2 × 3</td></tr>
+      <tr><th scope="row">Z², A²</th><td>Hidden pre-activations and activations</td><td>m × 3</td></tr>
+      <tr><th scope="row">W²</th><td>Hidden-to-output weights</td><td>3 × 1</td></tr>
+      <tr><th scope="row">Z³, ŷ</th><td>Output pre-activations and predictions</td><td>m × 1</td></tr>
+    </tbody>
+  </table>
+</div>
+
+Parenthesized superscripts label layers or weight matrices; they are not powers. The input is layer 1, the hidden layer is 2, and the output layer is 3. The two weight matrices are numbered separately: $W^{(1)}$ connects layers 1 and 2, and $W^{(2)}$ connects layers 2 and 3. Throughout the network equations, $X$ is the normalized input matrix and $y$ is the normalized target column.
+
+## The first matrix multiplication
+
+Each hidden unit receives both input features. Its pre-activation is their weighted sum.
+
+$$
+\def\arraystretch{1.5}
+W^{(1)}=
+\begin{bmatrix}
+w_{11}^{(1)} & w_{12}^{(1)} & w_{13}^{(1)}\\
+w_{21}^{(1)} & w_{22}^{(1)} & w_{23}^{(1)}
+\end{bmatrix}
+$$
+
+$$
+Z^{(2)}=XW^{(1)}
+$$
+
+For example $i$ and hidden unit $j$:
+
+$$
+z^{(2)}_{ij}=x_{i1}w^{(1)}_{1j}+x_{i2}w^{(1)}_{2j}
+$$
+
+Applying the sigmoid to every entry produces $A^{(2)}=\sigma(Z^{(2)})$. Processing the entire matrix together is the vectorized equivalent of evaluating each example and each hidden unit individually.
+
+**Retrospective correction:** one equation in the original architecture text reverses the matrix product to $W^{(1)}X$. The source correctly uses <code>np.dot(X, self.W1)</code>. The original prose also uses three-row dimensions from the introductory example; the executable training batch has four rows.
+
+## The sigmoid and its derivative
+
+The activation and its derivative are:
+
+$$
+\begin{aligned}
+\sigma(z) &= \frac{1}{1+e^{-z}},\\[0.75em]
+\sigma'(z) &= \frac{e^{-z}}{(1+e^{-z})^2}.
+\end{aligned}
+$$
+
+Equivalently, $\sigma'(z)=\sigma(z)(1-\sigma(z))$. At $z=0$, the activation is $0.5$ and the derivative is $0.25$. Far from zero, the activation approaches an endpoint and the derivative approaches zero.
+
+~~~python
+def sigmoid(self, z):
+    return 1 / (1 + np.exp(-z))
+
+def sigmoid_prime(self, z):
+    return np.exp(-z) / ((1 + np.exp(-z))**2)
+~~~
+
+The code evaluates the exponential directly. Very large negative pre-activations can overflow numerically; the original implementation has no stability guard. This is one reason to distinguish an educational implementation from a production model.
+
+## From the hidden layer to a score
+
+The output unit combines the three hidden activations using a second weight matrix, then applies the sigmoid again.
+
+$$
+\def\arraystretch{1.5}
+W^{(2)}=
+\begin{bmatrix}
+w_{11}^{(2)}\\
+w_{21}^{(2)}\\
+w_{31}^{(2)}
+\end{bmatrix}
+$$
+
+$$
+Z^{(3)}=A^{(2)}W^{(2)}
+$$
+
+$$
+\begin{aligned}
+\widehat y &= \sigma(Z^{(3)}),\\[0.5em]
+\widehat s_i &= 100\,\widehat y_i.
+\end{aligned}
+$$
+
+The output can approach 0 and 100 points but, for finite pre-activations in exact arithmetic, never reaches those endpoints. This bound is part of the model design.
+
+## The complete forward pass
+
+~~~python
+def forward(self, X):
+    self.z2 = np.dot(X, self.W1)
+    self.a2 = self.sigmoid(self.z2)
+    self.z3 = np.dot(self.a2, self.W2)
+    prediction = self.sigmoid(self.z3)
+    return prediction
+~~~
+
+The intermediate arrays are stored on the object because backpropagation needs them. Each call replaces those values, so the gradients must correspond to the inputs used in the latest forward pass. The gradient method calls <code>forward</code> itself to ensure that is true.
+
+## Before training
+
+The architecture notebook preserves predictions from an untrained initialization:
+
+~~~text
+[[0.36756757],
+ [0.35411977],
+ [0.34999250],
+ [0.35427414]]
+~~~
+
+These correspond to about 35–37 points, while the targets are 75, 82, 93, and 70. Random weights do not encode the relationship the model is meant to learn.
+
+The later training notebook initializes another network. These initial outputs are evidence of an untrained forward pass, **not a recorded starting checkpoint for the final training run**.
+
+Source: [original architecture notebook](/archive/architecture.ipynb) and [Python implementation](/archive/feed_forward_net.py).

@@ -1,0 +1,71 @@
+---
+import { author, repository, siteTitle } from '../data/site';
+
+interface Props {
+  title: string;
+  seoTitle?: string;
+  description: string;
+  chapterIndex: number;
+}
+const { title, seoTitle = title, description, chapterIndex } = Astro.props;
+const indexable = chapterIndex >= 0;
+const canonical = Astro.site && indexable ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+const home = Astro.site?.href;
+const imageUrl = canonical ? new URL('/social-preview.png', Astro.site).href : undefined;
+const imageAlt = 'Feedforward Neural Network for Regression by Lucas Barbosa: a fully connected 2–3–1 network with two inputs, three hidden units, and one output.';
+const structuredData = canonical && home ? {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', '@id': `${home}#website`, url: home, name: siteTitle, inLanguage: 'en', author: { '@id': `${home}#author` } },
+    { '@type': 'Person', '@id': `${home}#author`, name: author },
+    {
+      '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical,
+      name: seoTitle, description, inLanguage: 'en', isPartOf: { '@id': `${home}#website` },
+      mainEntity: { '@id': `${canonical}#article` },
+      ...(chapterIndex > 0 ? { breadcrumb: { '@id': `${canonical}#breadcrumb` } } : {}),
+    },
+    {
+      '@type': 'Article', '@id': `${canonical}#article`, headline: seoTitle,
+      description, url: canonical, inLanguage: 'en', isAccessibleForFree: true,
+      author: { '@id': `${home}#author` }, mainEntityOfPage: { '@id': `${canonical}#webpage` },
+      isBasedOn: repository, image: { '@type': 'ImageObject', url: imageUrl, width: 1200, height: 630 },
+      about: [{ '@type': 'Thing', name: 'Feedforward neural networks' }, { '@type': 'Thing', name: 'Supervised regression' }],
+    },
+    ...(chapterIndex > 0 ? [{
+      '@type': 'BreadcrumbList', '@id': `${canonical}#breadcrumb`,
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Overview', item: home },
+        { '@type': 'ListItem', position: 2, name: title, item: canonical },
+      ],
+    }] : []),
+  ],
+} : undefined;
+// Escape '<' so future authored metadata cannot end the JSON-LD script element.
+const jsonLd = structuredData ? JSON.stringify(structuredData).replace(/</g, '\\u003c') : undefined;
+---
+<title>{seoTitle} | {author}</title>
+<meta name="description" content={description} />
+<meta name="author" content={author} />
+<meta name="robots" content={indexable ? 'max-image-preview:large' : 'noindex, follow'} />
+{canonical && <link rel="canonical" href={canonical} />}
+{indexable && <>
+  <meta property="og:type" content={chapterIndex === 0 ? 'website' : 'article'} />
+  <meta property="og:title" content={seoTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:site_name" content={siteTitle} />
+  {canonical && <meta property="og:url" content={canonical} />}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={seoTitle} />
+  <meta name="twitter:description" content={description} />
+  {imageUrl && <>
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+  </>}
+</>}
+{jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
+{Astro.site && <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />}

@@ -1,0 +1,10 @@
+---
+import archive from '../data/archive.json';
+---
+<div class="overflow-x-auto" tabindex="0" role="region" aria-label="Archived training predictions">
+  <table>
+    <caption>Table 3. Saved training predictions, converted from 0–1 to points out of 100.</caption>
+    <thead><tr><th scope="col">Example</th><th scope="col">Observed</th><th scope="col">Predicted</th><th scope="col">Error (points)</th></tr></thead>
+    <tbody>{archive.targets.map((target, i) => <tr><th scope="row">{i + 1}</th><td>{target.toFixed(2)}</td><td>{archive.predictions[i].toFixed(2)}</td><td>{(archive.predictions[i] - target).toFixed(2)}</td></tr>)}</tbody>
+  </table>
+</div>

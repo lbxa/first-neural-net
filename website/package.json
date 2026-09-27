@@ -1,0 +1,46 @@
+{
+  "name": "first-neural-network-research",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "prepare:archive": "node scripts/prepare-archive.mjs",
+    "prepare:diagram": "node scripts/prepare-diagram.mjs",
+    "prepare:social": "node scripts/prepare-social-image.mjs",
+    "dev": "bun run prepare:archive && bun run prepare:diagram && bun run prepare:social && astro dev --background",
+    "build": "bun run prepare:archive && bun run prepare:diagram && bun run prepare:social && astro build",
+    "check": "bun run prepare:archive && bun run prepare:diagram && bun run prepare:social && astro check",
+    "check:seo": "node scripts/check-seo.mjs",
+    "audit": "node scripts/audit.mjs",
+    "preview": "astro preview",
+    "preview:worker": "bun run build && wrangler dev",
+    "deploy:dry-run": "bun run build && bun run check:seo --require-site && wrangler deploy --dry-run",
+    "deploy": "bun run build && bun run check:seo --require-site && wrangler deploy",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.1",
+    "@astrojs/mdx": "^8.0.2",
+    "@astrojs/sitemap": "^3.7.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.5",
+    "katex": "0.16.47",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "cheerio": "^1.2.0",
+    "chrome-launcher": "^1.2.1",
+    "lighthouse": "^13.5.0",
+    "sharp": "^0.35.4",
+    "typescript": "^6",
+    "wrangler": "^4"
+  }
+}

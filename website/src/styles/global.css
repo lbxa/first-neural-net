@@ -1,0 +1,24 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "katex/dist/katex.min.css";
+
+/* Keep browser typography and controls, with layout and simple table borders. */
+html { overflow-wrap: break-word; }
+img { max-width: 100%; height: auto; }
+pre { overflow-x: auto; padding: --spacing(4); }
+/* Inline math follows surrounding text, including user font-size preferences. */
+:not(.katex-display) > .katex { font-size: 1em; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding-block: --spacing(2); }
+table { margin-inline: auto; border-collapse: collapse; border: 1px solid currentColor; }
+caption { padding-bottom: --spacing(2); }
+th, td { border: 1px solid currentColor; padding: --spacing(2) --spacing(3); vertical-align: top; }
+figure { margin-inline: 0; }
+figcaption { margin-top: --spacing(3); }
+section + section { margin-top: --spacing(10); }
+@media print {
+  nav, .skip-link, .chapter-navigation { display: none; }
+  body { max-width: none; margin: 0; }
+  pre { white-space: pre-wrap; }
+  figure { break-inside: avoid; }
+}

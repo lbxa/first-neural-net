@@ -1,0 +1,93 @@
+---
+layout: ../layouts/Research.astro
+title: Source & reproduction
+seoTitle: 'Neural Network from Scratch: Python Source'
+description: Read and download the complete NumPy neural network implementation and original notebooks, with guidance on reproducing the 2017 experiment.
+---
+import SourceCode from '../components/SourceCode.astro';
+
+The original project is small enough to read end to end. A single Python file contains the network, a helper for scaling and gradient checks, a trainer, and the example data.
+
+## Original material
+
+The downloads below preserve the original files, including notebook output. The explanatory chapters on this site are a separate, annotated account.
+
+- [Download the Python implementation](/archive/feed_forward_net.py) — the complete network, helper, trainer, and executable example.
+- [Download the introduction notebook](/archive/intro.ipynb) — the problem, learning settings, and neuron illustrations.
+- [Download the architecture notebook](/archive/architecture.ipynb) — data, scaling, the forward pass, and untrained predictions.
+- [Download the training notebook](/archive/training.ipynb) — backpropagation, gradient checks, optimizer output, the learning curve, and final predictions.
+- [Browse the original manual and all image files](https://github.com/lbxa/first-neural-net/tree/master/manual) — retain the notebook folder and its image subdirectory together when opening the notebooks locally.
+- [Browse the project repository](https://github.com/lbxa/first-neural-net).
+
+The source header identifies Python 3.6 and dates the work to 28 July 2017, at Oakhill College, for SDD. It names NumPy and SciPy as dependencies but does not pin installed versions. The notebook additionally uses Matplotlib to plot the learning curve.
+
+## How the program is organized
+
+<dl className="space-y-4">
+  <dt><strong>Neural_Network</strong></dt>
+  <dd>Owns the weight matrices, forward pass, sigmoid and its derivative, regularized objective, analytic gradients, and parameter packing.</dd>
+  <dt><strong>Helper</strong></dt>
+  <dd>Normalizes inputs and targets, estimates numerical gradients, and prints predicted scores.</dd>
+  <dt><strong>Trainer</strong></dt>
+  <dd>Adapts the model to SciPy's optimizer interface and records training and test costs during optimization.</dd>
+</dl>
+
+The main block first creates the two data splits and initializes these objects. It scales both splits, computes the numerical and analytic gradients, calls the trainer, and finally prints predictions for the **training** examples.
+
+The program does not load external data, save trained weights, or expose a prediction service. It is a self-contained demonstration.
+
+## Running the archived example
+
+From the root of the original repository, the entry point is:
+
+~~~sh
+python3 src/feed_forward_net.py
+~~~
+
+This requires a Python environment with compatible NumPy and SciPy installations. The historical environment is not fully specified, so that command identifies the original execution path; it is not a promise of identical results on current library versions.
+
+The expected flow is an optimizer report followed by expected and predicted scores for four training rows. Random initialization can change the predictions and iteration count on each run.
+
+For the notebooks, preserve their relative image paths and use a notebook environment with NumPy, SciPy, and Matplotlib. The existing output can be inspected without rerunning the cells. The standalone script does not generate the learning-curve plot; the training notebook contains the plotting cell.
+
+## Details to check in a modern reproduction
+
+These are observations about the archived implementation. The downloadable source has not been rewritten.
+
+1. **Normalization:** store the training input maxima and use them for all future inputs. The original helper rescales each split independently and modifies its arrays in place.
+2. **Gradient verification:** compare the analytic and numerical vectors with an explicit tolerance. The original script calculates both but makes no assertion.
+3. **Printing predictions:** <code>Helper.print_predictions</code> calls the global variable <code>NN</code> rather than its stored <code>Local_Ref</code>. It works in the supplied main block, but is not a general helper for another model instance.
+4. **Scalar conversions:** the original uses Python's <code>sum</code> on a column array and converts one-element prediction arrays directly to integers. A modernized copy should make scalar extraction explicit where required by the installed NumPy/SciPy versions.
+5. **Numerical stability:** direct exponential evaluation in the sigmoid and its derivative can overflow at extreme values.
+6. **Dependency handling:** imports occur before the main block's dependency check, so a missing package raises an import error before that check can help.
+7. **Reproducibility:** record the seed, dependency versions, initial and final parameters, raw data, input scales, optimizer settings, and numerical cost histories.
+
+Changes made for a new experiment should be documented separately, because they can change the optimization trajectory and results. Nothing in this site substitutes a new run for the archived one.
+
+## Complete implementation
+
+The following listing is loaded directly from the original Python file during site preparation.
+
+<SourceCode />
+
+## Evidence map
+
+This map connects the account to the files from which it was assembled.
+
+<div className="overflow-x-auto" tabIndex="0" role="region" aria-label="Evidence map">
+  <table>
+    <caption>Table 4. Where to find each part of the original work.</caption>
+    <thead><tr><th scope="col">Material</th><th scope="col">Original location</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Task and neuron illustrations</th><td><code>manual/jupyter/intro.ipynb</code> and <code>manual/jupyter/img/</code></td></tr>
+      <tr><th scope="row">Forward pass and untrained predictions</th><td><code>manual/jupyter/architecture.ipynb</code></td></tr>
+      <tr><th scope="row">Gradient vectors, convergence, curve, predictions</th><td><code>manual/jupyter/training.ipynb</code></td></tr>
+      <tr><th scope="row">Final executable implementation</th><td><code>src/feed_forward_net.py</code></td></tr>
+      <tr><th scope="row">Original browser-readable manual</th><td><code>manual/index.html</code> and <code>manual/docs/</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+The neuron illustrations and learning curve are reproduced from the repository; their captions identify their archival origin. The repository does not provide individual external credits for those illustrations. This account does not attribute their creation beyond the supplied material.
+
+The network diagram is a new TikZ reconstruction of the original 2–3–1 architecture. Its [editable LaTeX source](/diagrams/feedforward-network.tex) preserves the six nodes and nine weights, with labels matching the notation in this account.

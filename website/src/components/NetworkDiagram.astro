@@ -1,0 +1,17 @@
+---
+import Network from '../assets/diagrams/feedforward-network.svg';
+
+interface Props { caption: string; }
+const { caption } = Astro.props;
+const width = 760;
+---
+<figure class="my-8">
+  <Network
+    class="block mx-auto max-w-full h-auto"
+    width={width}
+    height={null}
+    role="img"
+    aria-label="A fully connected feedforward neural network. Two normalized inputs, hours slept and hours studied, connect to all three hidden units. Each hidden unit connects to one normalized predicted score. There are nine weights and no biases."
+  />
+  <figcaption class="mx-auto" style={`max-width: ${width}px`}>{caption}</figcaption>
+</figure>

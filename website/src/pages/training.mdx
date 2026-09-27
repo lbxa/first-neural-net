@@ -1,0 +1,207 @@
+---
+layout: ../layouts/Research.astro
+title: Learning & backpropagation
+seoTitle: Backpropagation & BFGS Training in NumPy
+description: Follow the backpropagation derivation for a NumPy neural network, including L2 regularization, finite-difference gradient checks, and BFGS training.
+---
+import { Code } from 'astro:components';
+import archive from '../data/archive.json';
+
+Forward propagation produces a prediction. Training asks how each of the nine weights should change to improve it. This was the mathematical core of the project: derive those changes explicitly, verify them independently, and supply them to an optimizer.
+
+## The objective actually used
+
+The final code minimizes the mean half-squared error plus an L2 penalty on both weight matrices. Writing $J$ for the objective at the current weights:
+
+$$
+\begin{aligned}
+J &= \frac{1}{2m}\sum_{i=1}^{m}(y_i-\widehat y_i)^2\\[0.75em]
+&\quad +\frac{\lambda}{2}
+\left(\lVert W^{(1)}\rVert_{\mathrm F}^2
++\lVert W^{(2)}\rVert_{\mathrm F}^2\right).
+\end{aligned}
+$$
+
+Here $m=4$, targets and predictions are on the normalized 0–1 scale, and $\lambda=0.0001$. The Frobenius norm squared is simply the sum of every squared entry in a matrix.
+
+The factor of one half cancels the factor of two when differentiating a square. Averaging over the batch makes the data term independent of a simple duplication of all examples. The penalty adds a cost for large weights.
+
+~~~python
+total_error = ((1/2) * sum((desired_output - self.prediction)**2)) / X.shape[0] + \
+              (self.learning_rate / 2) * (np.sum(self.W1**2) + np.sum(self.W2**2))
+~~~
+
+**A naming detail:** the attribute <code>learning_rate</code> is actually the regularization coefficient $\lambda$. It does not set BFGS's step size. The regularization strength is fixed throughout a run; it is not a learned parameter.
+
+Squaring residuals does not make this network's objective convex in its weights. The sigmoid layers make the relationship nonlinear, so successful optimization is not a proof of a global minimum.
+
+## Start at the output
+
+The chain rule connects the loss to the output-layer weights through the prediction and its pre-activation. Differentiating one half-squared residual gives $\widehat y_i-y_i$. Averaging over $m$ examples introduces the factor $1/m$ in the derivative of the data objective:
+
+$$
+\frac{\partial J_{\mathrm{data}}}{\partial \widehat y_i}
+=\frac{\widehat y_i-y_i}{m}
+$$
+
+To match the code, define the output error without the batch average, then divide the matrix gradient by $m$:
+
+$$
+\delta^{(3)}=(\widehat y-y)\odot\sigma'(Z^{(3)})
+$$
+
+The symbol $\odot$ means elementwise multiplication. Both factors have shape $(m,1)$, so $\delta^{(3)}$ also has shape $(m,1)$.
+
+Because $Z^{(3)}=A^{(2)}W^{(2)}$, the gradient for the second weight matrix is:
+
+$$
+\frac{\partial J}{\partial W^{(2)}}=
+\frac{(A^{(2)})^{\mathsf T}\delta^{(3)}}{m}+\lambda W^{(2)}
+$$
+
+The upright superscript $\mathsf T$ denotes a transpose. It makes the matrix dimensions $(3\times m)(m\times1)$, giving the required $3\times1$ gradient. Each entry accumulates that weight's contribution across all examples.
+
+## Continue through the hidden layer
+
+The output error is propagated backward through the second weight matrix and multiplied by the hidden activation derivative:
+
+$$
+\delta^{(2)}=
+\left(\delta^{(3)}(W^{(2)})^{\mathsf T}\right)\odot\sigma'(Z^{(2)})
+$$
+
+This gives an $(m,3)$ array: one hidden-layer error for every example and hidden unit. The gradient of the first matrix then follows from $Z^{(2)}=XW^{(1)}$:
+
+$$
+\frac{\partial J}{\partial W^{(1)}}=
+\frac{X^{\mathsf T}\delta^{(2)}}{m}+\lambda W^{(1)}
+$$
+
+The matrix dimensions are $(2\times m)(m\times3)$, producing a $2\times3$ gradient that matches the first weight matrix. The L2 penalty contributes $\lambda W$ to each gradient.
+
+These equations retain the matrix order used in the implementation. Several equations in the original manual place transposes or factors in a different order; matrix products cannot generally be rearranged.
+
+## Backpropagation in Python
+
+~~~python
+def cost_function_prime(self, X, desired_y):
+    self.prediction = self.forward(X)
+
+    l3_backprop_error = np.multiply(
+        -(desired_y - self.prediction), self.sigmoid_prime(self.z3)
+    )
+    cost_in_terms_of_W2 = (
+        np.dot(self.a2.T, l3_backprop_error) / X.shape[0]
+        + self.learning_rate * self.W2
+    )
+
+    l2_backprop_error = (
+        np.dot(l3_backprop_error, self.W2.T) * self.sigmoid_prime(self.z2)
+    )
+    cost_in_terms_of_W1 = (
+        np.dot(X.T, l2_backprop_error) / X.shape[0]
+        + self.learning_rate * self.W1
+    )
+
+    return cost_in_terms_of_W1, cost_in_terms_of_W2
+~~~
+
+This excerpt changes line wrapping for readability while preserving the original operations. Both gradients use the current weights; the optimizer updates the parameters only after evaluating the objective and gradient.
+
+Backpropagation computes derivatives. It does not, on its own, choose the optimization algorithm. In this project, BFGS consumes those derivatives.
+
+## Checking the gradients independently
+
+A wrong derivative can still produce plausible-looking predictions. The project therefore estimates each derivative a second way, by perturbing one weight at a time and evaluating the objective:
+
+$$
+g_j^{\mathrm{numeric}} \approx
+\frac{J(\theta+\epsilon e_j)-J(\theta-\epsilon e_j)}
+{2\epsilon}
+$$
+
+Here $\epsilon=10^{-4}$, $\theta$ is the flattened vector of all nine weights, and $e_j$ selects one coordinate. Central differences need two objective evaluations per weight, so this network needs 18 evaluations for a full numerical gradient.
+
+~~~python
+perturb[i] = epsilon
+self.Local_Ref.set_params(initial_params + perturb)
+loss_2 = self.Local_Ref.cost_function(X, desired_y)
+
+self.Local_Ref.set_params(initial_params - perturb)
+loss_1 = self.Local_Ref.cost_function(X, desired_y)
+
+numerical_gradient[i] = (loss_2 - loss_1) / (2 * epsilon)
+perturb[i] = 0
+~~~
+
+After checking all coordinates, the helper restores the original weights. The training notebook prints the following vector for **both** the numerical and analytic calculations:
+
+<Code code={archive.analyticGradient.map((value) => value.toFixed(8)).join('\n')} lang="text" theme="github-light-high-contrast" />
+
+All nine entries match at the displayed eight decimal places. That supports the correctness of this derivative calculation at the checked point, including the regularization term. It is not proof of exact equality, nor a check of every possible input or weight vector.
+
+The original script computes both gradients but does not compare them with an assertion. A reproducibility harness could add a relative norm check. Write the analytic gradient as $g_{\mathrm a}$ and the numerical gradient as $g_{\mathrm n}$:
+
+$$
+r=\frac{\lVert g_{\mathrm a}-g_{\mathrm n}\rVert_2}
+{\max\!\left(10^{-12},\,\lVert g_{\mathrm a}\rVert_2+
+\lVert g_{\mathrm n}\rVert_2\right)}
+$$
+
+The archived rounded vectors cannot establish that ratio at full precision.
+
+## Packing the parameters
+
+SciPy expects a one-dimensional parameter vector. The network concatenates the flattened first and second weight matrices:
+
+~~~python
+def get_params(self):
+    params = np.concatenate((self.W1.ravel(), self.W2.ravel()))
+    return params
+~~~
+
+The first six entries belong to $W^{(1)}$, and the last three belong to $W^{(2)}$. The inverse operation reshapes those slices back into $(2,3)$ and $(3,1)$ arrays. The gradient is flattened in exactly the same order.
+
+Matching those two orders is essential. Otherwise, the optimizer could use the derivative for one weight to update a different weight.
+
+## BFGS optimization
+
+The trainer exposes a wrapper returning the current objective and flattened gradient. BFGS is a quasi-Newton method: it builds an approximation of curvature information from successive steps and gradients, rather than using a single fixed learning rate.
+
+~~~python
+options = {"maxiter": 200, "disp": True}
+_result = optimize.minimize(
+    self.cost_function_wrapper,
+    initial_params,
+    jac=True,
+    method="BFGS",
+    args=(train_x, train_y),
+    options=options,
+    callback=self.callback,
+)
+self.Local_Ref.set_params(_result.x)
+self.optimization_results = _result
+~~~
+
+With <code>jac=True</code>, the wrapper supplies both the objective and its gradient. The maximum iteration budget is 200; the archived run terminates after 80. Function and gradient evaluation counts can exceed the iteration count because the optimizer may evaluate more than one candidate within an iteration.
+
+The code uses the full training batch for each objective evaluation. The manual discusses stochastic and batch gradient descent, but the actual optimizer is BFGS. Neither full-batch evaluation nor squared error eliminates nonconvexity or the challenges of high-dimensional optimization.
+
+## Tracking training and test cost
+
+The callback saves the current regularized objective on both splits:
+
+~~~python
+self.cost_list.append(
+    self.Local_Ref.cost_function(self.train_x, self.train_y)
+)
+self.test_cost_list.append(
+    self.Local_Ref.cost_function(self.test_x, self.test_y)
+)
+~~~
+
+At a given iteration, both curves include the same weight penalty. Their difference therefore comes from the data terms, but their absolute values are not pure prediction errors. The callback does not implement early stopping or select a model using test cost.
+
+The [results chapter](/results/) presents the original curve and recorded optimizer output, alongside the limitations of this evaluation.
+
+Source: [training notebook](/archive/training.ipynb) and [complete implementation](/source/#complete-implementation).
